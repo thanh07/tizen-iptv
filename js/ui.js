@@ -49,12 +49,6 @@ const UI = (() => {
             channelDialHud:         document.getElementById('channel-dial-hud'),
             dialNumber:             document.getElementById('dial-number'),
             channelCountBadge:      document.getElementById('channel-count-badge'),
-            epgPanel:               document.getElementById('epg-panel'),
-            epgNowTime:             document.getElementById('epg-now-time'),
-            epgNowTitle:            document.getElementById('epg-now-title'),
-            epgNowProgress:         document.getElementById('epg-now-progress'),
-            epgNextTime:            document.getElementById('epg-next-time'),
-            epgNextTitle:           document.getElementById('epg-next-title'),
             statusIcon:             document.getElementById('status-icon'),
             statusText:             document.getElementById('status-text'),
             tabBar:                 document.getElementById('tab-bar'),
@@ -336,21 +330,6 @@ const UI = (() => {
         });
         const focused = els.channelList.querySelector('.focused');
         if (focused) focused.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-
-        // Update EPG Panel on the right when focus moves
-        if (currentRenderedChannels && currentRenderedChannels[focusChannelIdx]) {
-            updateEpgPanel(currentRenderedChannels[focusChannelIdx], focusChannelIdx + 1);
-        }
-    }
-
-    function updateEpgPanel(channel, channelNum) {
-        if (!channel) return;
-        const epg = getEstimatedEpg(channel);
-        if (els.epgNowTime)     els.epgNowTime.textContent     = `${epg.startTime} - ${epg.endTime}`;
-        if (els.epgNowTitle)    els.epgNowTitle.textContent    = epg.nowTitle;
-        if (els.epgNowProgress) els.epgNowProgress.style.width = epg.progress + '%';
-        if (els.epgNextTime)    els.epgNextTime.textContent    = `${epg.endTime} - ${epg.nextEndTime}`;
-        if (els.epgNextTitle)   els.epgNextTitle.textContent   = epg.nextTitle;
     }
 
     function refreshChannelFavBadge(channelUrl, isFav) {
@@ -393,8 +372,6 @@ const UI = (() => {
         if (els.osdTimeStart)    els.osdTimeStart.textContent    = epg.startTime;
         if (els.osdTimeEnd)      els.osdTimeEnd.textContent      = epg.endTime;
         if (els.osdProgressFill) els.osdProgressFill.style.width = epg.progress + '%';
-
-        updateEpgPanel(channel, channelNum);
     }
 
     function updatePlayerStatus(state) {
@@ -530,7 +507,6 @@ const UI = (() => {
         showInfoBar, showLoading, updateTab,
         showChannelSwitchCard, hideChannelSwitchCard,
         showDialNumber, hideDialNumber,
-        updateEpgPanel,
         // Modal / Toast
         showModal, hideModal, isModalVisible,
         showToast,

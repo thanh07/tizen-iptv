@@ -143,9 +143,9 @@ const AppState = (() => {
         uiVisible = true;
         document.getElementById('header').classList.remove('ui-hidden');
         document.getElementById('sidebar').classList.remove('ui-hidden');
-        document.getElementById('hint-bar').classList.remove('ui-hidden');
         document.getElementById('sidebar-timer-bar').classList.remove('ui-hidden');
-        UI.showInfoBar(!!currentChannel);
+        // Do NOT show bottom infoBar while channel sidebar is open to keep UI clean
+        UI.showInfoBar(false);
         resetUITimer();
 
         if (wasHidden && currentChannel && UI.getFocusZone() === 'channels') {
@@ -157,7 +157,6 @@ const AppState = (() => {
         uiVisible = false;
         document.getElementById('header').classList.add('ui-hidden');
         document.getElementById('sidebar').classList.add('ui-hidden');
-        document.getElementById('hint-bar').classList.add('ui-hidden');
         document.getElementById('sidebar-timer-bar').classList.add('ui-hidden');
         UI.showInfoBar(false);
         if (UI.isGroupPanelOpen()) UI.closeGroupPanel();
@@ -481,7 +480,6 @@ const AppState = (() => {
             UI.setFocusChannelIdx(activeIdx, filteredChannels.length);
         }
         UI.scrollToPlayingChannel();
-        if (uiVisible) UI.showInfoBar(true);
     }
 
     function playNext() {
@@ -792,13 +790,14 @@ const AppState = (() => {
         }, true));
 
         Remote.on('GREEN',  wrapAction(() => {
-            if (uiVisible) {
-                const infoBar = document.getElementById('info-bar');
-                if (infoBar) infoBar.classList.toggle('visible');
-            }
+            hideUI();
+            UI.showInfoBar(true);
+            setTimeout(() => UI.showInfoBar(false), 4500);
         }, true));
         Remote.on('INFO',   wrapAction(() => {
-            if (uiVisible) UI.showInfoBar(true);
+            hideUI();
+            UI.showInfoBar(true);
+            setTimeout(() => UI.showInfoBar(false), 4500);
         }, true));
 
         // ── Volume & Mute Keys ───────────────────────────────────────────────

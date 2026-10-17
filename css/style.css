@@ -32,11 +32,10 @@
     --bg-hover:       rgba(255,255,255,0.07);
     --bg-focus:       rgba(0,242,254,0.14);
 
-    --header-h:       68px;
-    --sidebar-w:      960px;   /* group + channel + epg combined */
+    --header-h:       60px;
+    --sidebar-w:      580px;   /* group (200px) + channel (380px) */
     --group-w:        200px;
     --channel-w:      380px;
-    --epg-w:          380px;
     --hintbar-h:      46px;
     --infobar-h:      98px;
 
@@ -387,12 +386,13 @@ html, body {
     z-index: 30;
     display: flex;
     align-items: center;
-    gap: 22px;
-    padding: 0 32px;
-    background: linear-gradient(180deg, rgba(8, 11, 22, 0.94) 0%, rgba(8, 11, 22, 0.8) 80%, rgba(8, 11, 22, 0) 100%);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    gap: 16px;
+    padding: 0 28px;
+    padding-right: 180px;
+    background: linear-gradient(180deg, rgba(6, 9, 18, 0.9) 0%, rgba(6, 9, 18, 0.45) 75%, rgba(6, 9, 18, 0) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
 
     /* Slide animation */
     transform: translateY(0);
@@ -610,101 +610,7 @@ html, body {
     overflow: hidden;
 }
 
-/* EPG Schedule Detail Panel (Right Column) */
-#epg-panel {
-    width: var(--epg-w);
-    flex-shrink: 0;
-    background: rgba(8, 11, 22, 0.92);
-    backdrop-filter: var(--overlay-blur);
-    -webkit-backdrop-filter: var(--overlay-blur);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
 
-.epg-cards-wrap {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.epg-program-card {
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: var(--transition);
-}
-
-.epg-card-now {
-    background: linear-gradient(135deg, rgba(0, 242, 254, 0.09) 0%, rgba(255, 255, 255, 0.02) 100%);
-    border-color: rgba(0, 242, 254, 0.35);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.epg-card-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.epg-card-tag {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.6px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    text-transform: uppercase;
-}
-
-.epg-card-tag.now {
-    background: rgba(0, 242, 254, 0.18);
-    color: var(--cyan);
-    border: 1px solid rgba(0, 242, 254, 0.45);
-}
-
-.epg-card-tag.next {
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(255, 255, 255, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.epg-card-time {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.65);
-    font-variant-numeric: tabular-nums;
-}
-
-.epg-card-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #ffffff;
-    line-height: 1.35;
-}
-
-.epg-card-progress-track {
-    height: 5px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 4px;
-}
-
-.epg-card-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #00f2fe, #38bdf8);
-    border-radius: 3px;
-    transition: width 0.3s ease;
-}
 
 .channel-count-badge {
     margin-left: auto;
@@ -1084,38 +990,31 @@ html, body {
 }
 
 /* ════════════════════════════════════════════════════════════
-   HINT BAR — Remote hints with authentic color pills
+   HINT BAR — Scoped neatly inside channel panel footer
    ════════════════════════════════════════════════════════════ */
-#hint-bar {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: var(--hintbar-h);
-    z-index: 25;
+#hint-bar.channel-hint-footer {
+    padding: 8px 12px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    padding: 0 28px;
-    background: rgba(6, 8, 16, 0.94);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 12.5px;
+    gap: 6px;
+    background: rgba(6, 9, 18, 0.96);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.6);
-    font-weight: 500;
-
-    transform: translateY(0);
-    transition: transform var(--slide);
+    flex-shrink: 0;
 }
-#hint-bar.ui-hidden { transform: translateY(110%); }
-#hint-bar span {
+
+#hint-bar.channel-hint-footer span {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 3px 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 14px;
+    gap: 4px;
+    padding: 2px 7px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    font-size: 10.5px;
 }
 
 /* ════════════════════════════════════════════════════════════

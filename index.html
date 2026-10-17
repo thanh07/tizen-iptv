@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261017_01">
+    <link rel="stylesheet" href="css/style.css?v=20261017_02">
 </head>
 <body>
 
@@ -141,10 +141,6 @@
             <span class="btn-refresh-icon">🔄</span>
             <span>Làm mới</span>
         </button>
-        <div id="now-playing-badge" style="display:none">
-            <div class="playing-dot"></div>
-            <span class="np-name" id="np-name-badge">—</span>
-        </div>
         <input type="file" id="global-file-input" accept=".m3u,.m3u8,text/plain" style="display:none">
     </header>
 
@@ -156,7 +152,7 @@
             <ul id="group-list" role="listbox" aria-label="Channel categories"></ul>
         </aside>
 
-        <!-- Channel Panel -->
+        <!-- Channel Panel (Clean & Focused) -->
         <section id="channel-panel">
             <div class="panel-header" id="channel-panel-header">
                 <span id="channel-panel-title">Channels</span>
@@ -167,38 +163,10 @@
                 <div class="nc-icon">📭</div>
                 <div class="nc-text">No channels found</div>
             </div>
-        </section>
-
-        <!-- EPG Schedule Detail Panel (Right Column) -->
-        <section id="epg-panel">
-            <div class="panel-header">Lịch Phát Sóng (EPG)</div>
-            <div class="epg-cards-wrap">
-                <!-- Now Playing Program Card -->
-                <div class="epg-program-card epg-card-now">
-                    <div class="epg-card-head">
-                        <span class="epg-card-tag now">ĐANG PHÁT</span>
-                        <span id="epg-now-time" class="epg-card-time">08:00 PM - 09:00 PM</span>
-                    </div>
-                    <div id="epg-now-title" class="epg-card-title">Chương trình phát sóng trực tiếp</div>
-                    <div class="epg-card-progress-track">
-                        <div id="epg-now-progress" class="epg-card-progress-fill" style="width: 50%;"></div>
-                    </div>
-                </div>
-
-                <!-- Next Program Card -->
-                <div class="epg-program-card epg-card-next">
-                    <div class="epg-card-head">
-                        <span class="epg-card-tag next">TIẾP THEO</span>
-                        <span id="epg-next-time" class="epg-card-time">09:00 PM - 10:00 PM</span>
-                    </div>
-                    <div id="epg-next-title" class="epg-card-title">Chương trình tiếp theo</div>
-                </div>
-            </div>
+            <!-- Clean compact hint footer strictly inside channel list -->
+            <footer id="hint-bar" class="channel-hint-footer" aria-label="Remote control hints"></footer>
         </section>
     </div>
-
-    <!-- Hint Bar — slides up from bottom -->
-    <footer id="hint-bar" aria-label="Remote control hints"></footer>
 
     <!-- Sidebar hide countdown indicator -->
     <div id="sidebar-timer-bar"><div id="sidebar-timer-fill"></div></div>
@@ -240,12 +208,12 @@
     })();
 </script>
 
-<script src="js/storage.js?v=20261017_01"></script>
-<script src="js/m3u-parser.js?v=20261017_01"></script>
-<script src="js/player.js?v=20261017_01"></script>
-<script src="js/remote.js?v=20261017_01"></script>
-<script src="js/ui.js?v=20261017_01"></script>
-<script src="js/app.js?v=20261017_01"></script>
+<script src="js/storage.js?v=20261017_02"></script>
+<script src="js/m3u-parser.js?v=20261017_02"></script>
+<script src="js/player.js?v=20261017_02"></script>
+<script src="js/remote.js?v=20261017_02"></script>
+<script src="js/ui.js?v=20261017_02"></script>
+<script src="js/app.js?v=20261017_02"></script>
 
 <script>
     window.addEventListener('appcontrol', function() {
