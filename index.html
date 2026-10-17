@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=1920">
+    <meta name="description" content="IPTV Player for Samsung Tizen TV — supports M3U playlists, EPG, favorites">
+    <title>TizenIPTV — Smart TV Player</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20261015_02">
+</head>
+<body>
+
+<div id="app">
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!--  FULLSCREEN PLAYER (always behind everything)         -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <main id="player-area">
+        <video id="main-video" playsinline autoplay aria-label="IPTV video player"></video>
+        <button id="btn-unmute-overlay" class="btn-unmute-floating" style="display:none;" title="Bấm để bật âm thanh">🔊 Bấm vào đây để Bật Tiếng</button>
+
+        <!-- Placeholder when no channel selected -->
+        <div class="player-placeholder" id="player-placeholder">
+            <div class="placeholder-icon-wrap">
+                <img src="icon.png" class="placeholder-app-icon" alt="TizenIPTV">
+            </div>
+            <div class="placeholder-text">Tizen<span class="placeholder-accent">IPTV</span></div>
+            <div class="placeholder-hint">Bấm phím bất kỳ hoặc chọn kênh từ danh sách để xem</div>
+        </div>
+
+        <!-- Loading / Error overlay -->
+        <div class="player-overlay" id="player-overlay">
+            <div id="status-icon">⏳</div>
+            <div id="status-text">Loading...</div>
+        </div>
+
+        <!-- Channel Info Bar (bottom of screen) -->
+        <div id="info-bar" role="status" aria-live="polite">
+            <img id="current-channel-logo" src="" alt="Channel logo" style="display:none">
+            <div class="info-channel-name-wrap">
+                <div id="current-channel-name">—</div>
+                <div class="info-meta" id="info-meta">Live Stream</div>
+            </div>
+            <div class="info-status">
+                <span class="live-badge">LIVE</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!--  OVERLAY UI (slides in/out over the video)            -->
+    <!-- ══════════════════════════════════════════════════════ -->
+
+    <!-- Header — slides down from top -->
+    <header id="header">
+        <div class="logo">
+            <div class="logo-icon-wrap">
+                <img src="icon.png" class="app-header-logo" alt="TizenIPTV">
+            </div>
+            <div class="logo-text-group">
+                <span class="logo-text">Tizen<span class="logo-accent">IPTV</span></span>
+                <span class="logo-badge">PRO</span>
+            </div>
+        </div>
+        <nav id="tab-bar">
+            <div class="tab-item active" data-tab="all">
+                <span class="tab-icon">📋</span>
+                <span class="tab-text">Tất cả kênh</span>
+            </div>
+            <div class="tab-item" data-tab="favorites">
+                <span class="tab-icon">⭐</span>
+                <span class="tab-text">Yêu thích</span>
+            </div>
+            <div class="tab-item" data-tab="playlists">
+                <span class="tab-icon">📡</span>
+                <span class="tab-text">Playlists</span>
+            </div>
+        </nav>
+        <button id="btn-refresh" class="btn-header-action" title="Nạp lại playlist hiện tại">
+            <span class="btn-refresh-icon">🔄</span>
+            <span>Làm mới</span>
+        </button>
+        <div id="now-playing-badge" style="display:none">
+            <div class="playing-dot"></div>
+            <span class="np-name" id="np-name-badge">—</span>
+        </div>
+        <input type="file" id="global-file-input" accept=".m3u,.m3u8,text/plain" style="display:none">
+    </header>
+
+    <!-- Sidebar — slides in from left -->
+    <div id="sidebar">
+        <!-- Group Panel -->
+        <aside id="group-panel">
+            <div class="panel-header">Categories</div>
+            <ul id="group-list" role="listbox" aria-label="Channel categories"></ul>
+        </aside>
+
+        <!-- Channel Panel -->
+        <section id="channel-panel">
+            <div class="panel-header" id="channel-panel-header">Channels</div>
+            <ul id="channel-list" role="listbox" aria-label="Channel list"></ul>
+            <div id="no-channels">
+                <div class="nc-icon">📭</div>
+                <div class="nc-text">No channels found</div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Hint Bar — slides up from bottom -->
+    <footer id="hint-bar" aria-label="Remote control hints"></footer>
+
+    <!-- Sidebar hide countdown indicator -->
+    <div id="sidebar-timer-bar"><div id="sidebar-timer-fill"></div></div>
+
+</div><!-- /#app -->
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  GLOBAL OVERLAYS                                          -->
+<!-- ══════════════════════════════════════════════════════════ -->
+
+<div id="loading-spinner" role="alert" aria-live="assertive">
+    <div class="spinner-ring"></div>
+    <div class="loading-text">Loading...</div>
+</div>
+
+<div id="modal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+        <h2 id="modal-title">Dialog</h2>
+        <div id="modal-body"></div>
+        <div class="modal-buttons"></div>
+    </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  SCRIPTS                                                  -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<script>
+    (function() {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js';
+        s.onerror = function() {
+            var local = document.createElement('script');
+            local.src = 'lib/hls.min.js';
+            document.head.appendChild(local);
+        };
+        document.head.appendChild(s);
+    })();
+</script>
+
+<script src="js/storage.js?v=20261015_01"></script>
+<script src="js/m3u-parser.js?v=20261015_01"></script>
+<script src="js/player.js?v=20261015_01"></script>
+<script src="js/remote.js?v=20261015_01"></script>
+<script src="js/ui.js?v=20261015_01"></script>
+<script src="js/app.js?v=20261015_01"></script>
+
+<script>
+    window.addEventListener('appcontrol', function() {
+        if (window.tizen) {
+            var reqAppControl = tizen.application.getCurrentApplication().getRequestedAppControl();
+        }
+    });
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Comprehensive unmute on ANY user interaction (click, key, touch)
+    function triggerUnmute() {
+        if (window.Player && typeof Player.unmute === 'function') {
+            Player.unmute();
+        } else {
+            var v = document.getElementById('main-video');
+            if (v) { v.muted = false; v.volume = 1.0; }
+        }
+    }
+
+    ['click', 'keydown', 'touchstart', 'mousedown'].forEach(function(evt) {
+        document.addEventListener(evt, triggerUnmute, { passive: true });
+    });
+
+    var unmuteBtn = document.getElementById('btn-unmute-overlay');
+    if (unmuteBtn) {
+        unmuteBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            triggerUnmute();
+            this.style.display = 'none';
+        });
+    }
+
+    // Hide placeholder when video starts
+    document.getElementById('main-video').addEventListener('playing', function() {
+        var ph = document.getElementById('player-placeholder');
+        if (ph) ph.style.display = 'none';
+        var badge = document.getElementById('now-playing-badge');
+        if (badge) {
+            badge.style.display = 'flex';
+            var ch = AppState.getCurrentChannel();
+            if (ch) document.getElementById('np-name-badge').textContent = ch.name;
+        }
+    });
+</script>
+</body>
+</html>

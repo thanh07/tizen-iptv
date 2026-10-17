@@ -1,0 +1,7 @@
+raw_http_iptv.m3u
+iptv_org_vn.m3u
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+*.log
