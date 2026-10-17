@@ -5,8 +5,8 @@
         version="1.0.0"
         viewmodes="fullscreen">
 
-    <tizen:application id="TizenIPTV.App"
-                       package="TizenIPTV"
+    <tizen:application id="TizenIPTV1.App"
+                       package="TizenIPTV1"
                        required_version="4.0"/>
 
     <content src="index.html"/>
