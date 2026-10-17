@@ -455,14 +455,25 @@ const AppState = (() => {
 
     function getSelectedGroupIdx() { return currentGroupIdx; }
 
+    function getCurrentChannelNumber() {
+        if (!currentChannel) return 1;
+        let idx = findChannelIndex(currentChannel, filteredChannels);
+        if (idx >= 0) return idx + 1;
+        idx = findChannelIndex(currentChannel, allChannels);
+        return idx >= 0 ? idx + 1 : 1;
+    }
+
     // ─── Channel Playback ─────────────────────────────────────────────────────
     function playChannel(channel) {
         currentChannel = channel;
         Player.play(channel.url);
         Storage.saveLastChannel(channel);
-        UI.updateNowPlaying(channel);
+
+        const chNum = getCurrentChannelNumber();
+        UI.showChannelSwitchCard(channel, chNum);
+        UI.updateNowPlaying(channel, chNum);
         refreshChannelList();
-        
+
         // Luôn đảm bảo tiêu điểm nằm ngay kênh vừa phát
         const activeIdx = findChannelIndex(currentChannel, filteredChannels);
         if (activeIdx >= 0) {
@@ -510,16 +521,32 @@ const AppState = (() => {
         if (currentTab === 'favorites') refreshChannelList();
     }
 
-    // ─── Search ───────────────────────────────────────────────────────────────
+    // ─── Direct Channel Dialing & Search ──────────────────────────────────────
     function handleNumKey(num) {
         searchBuffer += num;
+        UI.showDialNumber(searchBuffer);
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => {
-            searchQuery = searchBuffer;
+            const dialNum = parseInt(searchBuffer, 10);
+            const targetList = filteredChannels.length ? filteredChannels : allChannels;
+
+            // 1. Direct channel number jump (1-based index)
+            if (!isNaN(dialNum) && dialNum >= 1 && dialNum <= targetList.length) {
+                const ch = targetList[dialNum - 1];
+                if (ch) {
+                    playChannel(ch);
+                    UI.showToast(`📺 Chuyển đến kênh ${dialNum}: ${ch.name}`);
+                }
+            } else {
+                // 2. Filter search query fallback
+                searchQuery = searchBuffer;
+                refreshChannelList();
+                if (searchQuery) UI.showToast(`🔍 Tìm kiếm: ${searchQuery}`);
+            }
+
             searchBuffer = '';
-            refreshChannelList();
-            if (searchQuery) UI.showToast(`🔍 Tìm kiếm: ${searchQuery}`);
-        }, 1000);
+            UI.hideDialNumber(800);
+        }, 1100);
     }
 
     // ─── Add Playlist Modal ───────────────────────────────────────────────────
@@ -819,7 +846,7 @@ const AppState = (() => {
     return {
         init,
         selectGroup, getSelectedGroupIdx,
-        playChannel, playNext, playPrev, getCurrentChannel,
+        playChannel, playNext, playPrev, getCurrentChannel, getCurrentChannelNumber,
         promptAddPlaylist, showPlaylistManager, loadPlaylistById, deletePlaylist,
         refreshCurrentPlaylist, refreshPlaylistById,
         triggerFilePicker, handleFileImport,

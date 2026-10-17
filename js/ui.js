@@ -15,35 +15,80 @@ const UI = (() => {
     let focusGroupIdx   = 0;
     let focusChannelIdx = 0;
     let groupPanelOpen  = false;     // ← NEW: group panel starts hidden
+    let currentRenderedChannels = [];
 
     // ─── DOM refs ─────────────────────────────────────────────────────────────
     let els = {};
+    let switchCardTimer = null;
+    let dialTimer = null;
 
     function init() {
         els = {
-            groupPanel:     document.getElementById('group-panel'),
-            groupList:      document.getElementById('group-list'),
-            channelList:    document.getElementById('channel-list'),
-            video:          document.getElementById('main-video'),
-            playerOverlay:  document.getElementById('player-overlay'),
-            channelName:    document.getElementById('current-channel-name'),
-            channelLogo:    document.getElementById('current-channel-logo'),
-            infoMeta:       document.getElementById('info-meta'),
-            statusIcon:     document.getElementById('status-icon'),
-            statusText:     document.getElementById('status-text'),
-            infoBar:        document.getElementById('info-bar'),
-            tabBar:         document.getElementById('tab-bar'),
-            modal:          document.getElementById('modal'),
-            modalTitle:     document.getElementById('modal-title'),
-            modalBody:      document.getElementById('modal-body'),
-            loadingSpinner: document.getElementById('loading-spinner'),
-            hintBar:        document.getElementById('hint-bar'),
-            toast:          document.getElementById('toast'),
-            noChannels:     document.getElementById('no-channels'),
+            groupPanel:             document.getElementById('group-panel'),
+            groupList:              document.getElementById('group-list'),
+            channelList:            document.getElementById('channel-list'),
+            video:                  document.getElementById('main-video'),
+            playerOverlay:          document.getElementById('player-overlay'),
+            channelName:            document.getElementById('current-channel-name'),
+            channelLogo:            document.getElementById('current-channel-logo'),
+            currentLogoPlaceholder: document.getElementById('current-logo-placeholder'),
+            currentChannelNum:      document.getElementById('current-channel-num'),
+            osdGroupName:           document.getElementById('osd-group-name'),
+            osdProgramTitle:        document.getElementById('osd-program-title'),
+            osdTimeStart:           document.getElementById('osd-time-start'),
+            osdTimeEnd:             document.getElementById('osd-time-end'),
+            osdProgressFill:        document.getElementById('osd-progress-fill'),
+            infoBar:                document.getElementById('info-bar'),
+            liveClock:              document.getElementById('live-clock'),
+            channelSwitchCard:      document.getElementById('channel-switch-card'),
+            csChannelLogo:          document.getElementById('cs-channel-logo'),
+            csLogoPlaceholder:      document.getElementById('cs-logo-placeholder'),
+            csGroupName:            document.getElementById('cs-group-name'),
+            csChannelName:          document.getElementById('cs-channel-name'),
+            csChannelNum:           document.getElementById('cs-channel-num'),
+            channelDialHud:         document.getElementById('channel-dial-hud'),
+            dialNumber:             document.getElementById('dial-number'),
+            channelCountBadge:      document.getElementById('channel-count-badge'),
+            epgPanel:               document.getElementById('epg-panel'),
+            epgNowTime:             document.getElementById('epg-now-time'),
+            epgNowTitle:            document.getElementById('epg-now-title'),
+            epgNowProgress:         document.getElementById('epg-now-progress'),
+            epgNextTime:            document.getElementById('epg-next-time'),
+            epgNextTitle:           document.getElementById('epg-next-title'),
+            statusIcon:             document.getElementById('status-icon'),
+            statusText:             document.getElementById('status-text'),
+            tabBar:                 document.getElementById('tab-bar'),
+            modal:                  document.getElementById('modal'),
+            modalTitle:             document.getElementById('modal-title'),
+            modalBody:              document.getElementById('modal-body'),
+            loadingSpinner:         document.getElementById('loading-spinner'),
+            hintBar:                document.getElementById('hint-bar'),
+            toast:                  document.getElementById('toast'),
+            noChannels:             document.getElementById('no-channels'),
         };
 
         // Group panel starts collapsed
         _setGroupPanelOpen(false, false);
+
+        // Start live real-time digital clock
+        startLiveClock();
+    }
+
+    // ─── Live Clock ───────────────────────────────────────────────────────────
+    function startLiveClock() {
+        function update() {
+            if (!els.liveClock) return;
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const hoursStr = String(hours).padStart(2, '0');
+            els.liveClock.textContent = `${hoursStr}:${minutes} ${ampm}`;
+        }
+        update();
+        setInterval(update, 1000);
     }
 
     // ─── Group Panel Show/Hide ────────────────────────────────────────────────
@@ -104,10 +149,127 @@ const UI = (() => {
         if (focused) focused.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 
+    // ─── EPG Estimator ───────────────────────────────────────────────────────
+    function getEstimatedEpg(channel) {
+        const now = new Date();
+        const curMins = now.getMinutes();
+        const curHours = now.getHours();
+
+        // 30-minute program blocks (00-30, 30-00)
+        const startSlotMins = curMins >= 30 ? 30 : 0;
+        const endSlotMins = startSlotMins === 30 ? 0 : 30;
+        const endSlotHours = (startSlotMins === 30 ? curHours + 1 : curHours) % 24;
+
+        function formatTime(h, m) {
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            let displayH = h % 12;
+            if (displayH === 0) displayH = 12;
+            return `${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+        }
+
+        const startTimeStr = formatTime(curHours, startSlotMins);
+        const endTimeStr = formatTime(endSlotHours, endSlotMins);
+        const nextEndTimeStr = formatTime((endSlotHours + (endSlotMins === 30 ? 0 : 1)) % 24, endSlotMins === 30 ? 0 : 30);
+
+        const elapsedMins = (curMins - startSlotMins + 60) % 30;
+        const progressPercent = Math.min(100, Math.max(8, Math.round((elapsedMins / 30) * 100)));
+
+        const group = (channel && channel.group ? channel.group.toLowerCase() : '');
+        const name = (channel && channel.name ? channel.name.toLowerCase() : '');
+
+        let nowTitle = 'Chương trình phát sóng trực tiếp';
+        let nextTitle = 'Chương trình tiếp theo';
+
+        if (group.includes('phim') || name.includes('movie') || name.includes('cinema') || name.includes('drama') || name.includes('tvb')) {
+            nowTitle = 'Phim Truyện: Lá Thư Định Mệnh (Tập ' + (curHours + 1) + ')';
+            nextTitle = 'Phim Truyện: Hạnh Phúc Đến Vạn Gia (Tập ' + (curHours + 2) + ')';
+        } else if (group.includes('thể thao') || group.includes('sport') || name.includes('sport') || name.includes('on sports')) {
+            nowTitle = 'Trực Tiếp: V-League 1 / Ngoại Hạng Anh';
+            nextTitle = 'Bản Tin Thể Thao 24/7 & Bình Luận Sau Trận Đấu';
+        } else if (group.includes('thiếu nhi') || group.includes('kids') || name.includes('kid') || name.includes('cartoon') || name.includes('on kids')) {
+            nowTitle = 'Kns - Hãy Để Rác Đúng Nơi Quy Định';
+            nextTitle = 'Thế Giới Hoạt Hình & Vui Cùng Bé';
+        } else if (group.includes('tin tức') || group.includes('thời sự') || name.includes('news') || name.includes('vtv1')) {
+            nowTitle = 'Bản Tin Thời Sự & Tin Tức 24 Giờ';
+            nextTitle = 'Toàn Cảnh Thế Giới & Tiêu Điểm Kinh Tế';
+        } else if (group.includes('nhạc') || group.includes('music') || name.includes('music')) {
+            nowTitle = 'Giai Điệu Trẻ & Ca Khúc Quốc Tế Được Yêu Thích';
+            nextTitle = 'Top Hits Âm Nhạc Việt Nam';
+        } else {
+            nowTitle = (channel ? channel.name : 'Truyền Hình') + ' - Phát Sóng Trực Tiếp';
+            nextTitle = (channel ? channel.name : 'Truyền Hình') + ' - Chương Trình Kế Tiếp';
+        }
+
+        return {
+            startTime: startTimeStr,
+            endTime: endTimeStr,
+            nextEndTime: nextEndTimeStr,
+            progress: progressPercent,
+            nowTitle,
+            nextTitle
+        };
+    }
+
+    // ─── Floating Channel Switch Card ─────────────────────────────────────────
+    function showChannelSwitchCard(channel, channelNum) {
+        if (!els.channelSwitchCard || !channel) return;
+        clearTimeout(switchCardTimer);
+
+        if (els.csChannelName) els.csChannelName.textContent = channel.name;
+        if (els.csGroupName)   els.csGroupName.textContent   = channel.group || 'Truyền Hình';
+        if (els.csChannelNum)  els.csChannelNum.textContent  = channelNum !== undefined && channelNum !== null ? channelNum : '';
+
+        if (els.csChannelLogo && els.csLogoPlaceholder) {
+            if (channel.logo) {
+                els.csChannelLogo.src = channel.logo;
+                els.csChannelLogo.style.display = 'block';
+                els.csLogoPlaceholder.style.display = 'none';
+            } else {
+                els.csChannelLogo.style.display = 'none';
+                els.csLogoPlaceholder.style.display = 'block';
+            }
+        }
+
+        els.channelSwitchCard.classList.add('visible');
+    }
+
+    function hideChannelSwitchCard(delay = 0) {
+        if (!els.channelSwitchCard) return;
+        clearTimeout(switchCardTimer);
+        if (delay > 0) {
+            switchCardTimer = setTimeout(() => {
+                if (els.channelSwitchCard) els.channelSwitchCard.classList.remove('visible');
+            }, delay);
+        } else {
+            els.channelSwitchCard.classList.remove('visible');
+        }
+    }
+
+    // ─── Direct Dial HUD ──────────────────────────────────────────────────────
+    function showDialNumber(numStr) {
+        if (!els.channelDialHud || !els.dialNumber) return;
+        clearTimeout(dialTimer);
+        els.dialNumber.textContent = numStr;
+        els.channelDialHud.classList.add('visible');
+    }
+
+    function hideDialNumber(delay = 1200) {
+        if (!els.channelDialHud) return;
+        clearTimeout(dialTimer);
+        dialTimer = setTimeout(() => {
+            if (els.channelDialHud) els.channelDialHud.classList.remove('visible');
+        }, delay);
+    }
+
     // ─── Channels ─────────────────────────────────────────────────────────────
     function renderChannels(channels) {
+        currentRenderedChannels = channels || [];
         if (!els.channelList) return;
         els.channelList.innerHTML = '';
+
+        if (els.channelCountBadge) {
+            els.channelCountBadge.textContent = (channels ? channels.length : 0) + ' kênh';
+        }
 
         if (!channels || channels.length === 0) {
             if (els.noChannels) els.noChannels.style.display = 'flex';
@@ -174,6 +336,21 @@ const UI = (() => {
         });
         const focused = els.channelList.querySelector('.focused');
         if (focused) focused.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+        // Update EPG Panel on the right when focus moves
+        if (currentRenderedChannels && currentRenderedChannels[focusChannelIdx]) {
+            updateEpgPanel(currentRenderedChannels[focusChannelIdx], focusChannelIdx + 1);
+        }
+    }
+
+    function updateEpgPanel(channel, channelNum) {
+        if (!channel) return;
+        const epg = getEstimatedEpg(channel);
+        if (els.epgNowTime)     els.epgNowTime.textContent     = `${epg.startTime} - ${epg.endTime}`;
+        if (els.epgNowTitle)    els.epgNowTitle.textContent    = epg.nowTitle;
+        if (els.epgNowProgress) els.epgNowProgress.style.width = epg.progress + '%';
+        if (els.epgNextTime)    els.epgNextTime.textContent    = `${epg.endTime} - ${epg.nextEndTime}`;
+        if (els.epgNextTitle)   els.epgNextTitle.textContent   = epg.nextTitle;
     }
 
     function refreshChannelFavBadge(channelUrl, isFav) {
@@ -193,34 +370,59 @@ const UI = (() => {
         });
     }
 
-    // ─── Player Info Bar ─────────────────────────────────────────────────────
-    function updateNowPlaying(channel) {
+    // ─── Player Info Bar (Modern OSD) ─────────────────────────────────────────
+    function updateNowPlaying(channel, channelNum) {
         if (!channel) return;
-        if (els.channelName) els.channelName.textContent = channel.name;
-        if (els.infoMeta)    els.infoMeta.textContent    = channel.group || 'Live Stream';
+        if (els.channelName)       els.channelName.textContent       = channel.name;
+        if (els.currentChannelNum) els.currentChannelNum.textContent = channelNum !== undefined && channelNum !== null ? channelNum : '';
+        if (els.osdGroupName)      els.osdGroupName.textContent      = channel.group || 'Live Stream';
+
         if (els.channelLogo) {
             if (channel.logo) {
                 els.channelLogo.src = channel.logo;
                 els.channelLogo.style.display = 'block';
+                if (els.currentLogoPlaceholder) els.currentLogoPlaceholder.style.display = 'none';
             } else {
                 els.channelLogo.style.display = 'none';
+                if (els.currentLogoPlaceholder) els.currentLogoPlaceholder.style.display = 'block';
             }
         }
+
+        const epg = getEstimatedEpg(channel);
+        if (els.osdProgramTitle) els.osdProgramTitle.textContent = epg.nowTitle;
+        if (els.osdTimeStart)    els.osdTimeStart.textContent    = epg.startTime;
+        if (els.osdTimeEnd)      els.osdTimeEnd.textContent      = epg.endTime;
+        if (els.osdProgressFill) els.osdProgressFill.style.width = epg.progress + '%';
+
+        updateEpgPanel(channel, channelNum);
     }
 
     function updatePlayerStatus(state) {
         const map = {
-            'idle':      { icon: '⏹', text: 'Ready',       cls: '' },
-            'loading':   { icon: '⏳', text: 'Loading...',  cls: 'loading' },
-            'playing':   { icon: '▶',  text: 'Playing',     cls: 'playing' },
-            'paused':    { icon: '⏸',  text: 'Paused',      cls: '' },
-            'error':     { icon: '⚠',  text: 'Error',       cls: 'error' },
-            'buffering': { icon: '⏳', text: 'Buffering...', cls: 'loading' },
+            'idle':      { icon: '⏹', text: 'Ready',        cls: '' },
+            'loading':   { icon: '⏳', text: 'Đang tải...',  cls: 'loading' },
+            'playing':   { icon: '▶',  text: 'Đang phát',   cls: 'playing' },
+            'paused':    { icon: '⏸',  text: 'Tạm dừng',    cls: '' },
+            'error':     { icon: '⚠',  text: 'Lỗi luồng',   cls: 'error' },
+            'buffering': { icon: '⏳', text: 'Đang đệm...',  cls: 'loading' },
         };
         const s = map[state] || map['idle'];
         if (els.statusIcon)    els.statusIcon.textContent = s.icon;
         if (els.statusText)    els.statusText.textContent = s.text;
         if (els.playerOverlay) els.playerOverlay.className = 'player-overlay ' + s.cls;
+
+        // Sync Floating Channel Switch Card
+        if (state === 'loading' || state === 'buffering') {
+            const ch = AppState.getCurrentChannel();
+            if (ch) {
+                showChannelSwitchCard(ch, AppState.getCurrentChannelNumber ? AppState.getCurrentChannelNumber() : null);
+            }
+        } else if (state === 'playing') {
+            // Keep card briefly then dismiss smoothly
+            hideChannelSwitchCard(2500);
+        } else if (state === 'error') {
+            hideChannelSwitchCard(0);
+        }
     }
 
     /** Info bar shown/hidden (slides up from bottom) */
@@ -326,6 +528,9 @@ const UI = (() => {
         // Player
         updateNowPlaying, updatePlayerStatus,
         showInfoBar, showLoading, updateTab,
+        showChannelSwitchCard, hideChannelSwitchCard,
+        showDialNumber, hideDialNumber,
+        updateEpgPanel,
         // Modal / Toast
         showModal, hideModal, isModalVisible,
         showToast,

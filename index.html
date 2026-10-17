@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261015_02">
+    <link rel="stylesheet" href="css/style.css?v=20261017_01">
 </head>
 <body>
 
@@ -40,15 +40,70 @@
             <div id="status-text">Loading...</div>
         </div>
 
-        <!-- Channel Info Bar (bottom of screen) -->
-        <div id="info-bar" role="status" aria-live="polite">
-            <img id="current-channel-logo" src="" alt="Channel logo" style="display:none">
-            <div class="info-channel-name-wrap">
-                <div id="current-channel-name">—</div>
-                <div class="info-meta" id="info-meta">Live Stream</div>
+        <!-- Real-time Digital Clock (Top Right) -->
+        <div id="live-clock" class="live-clock">--:-- --</div>
+
+        <!-- Floating Channel Switch / Buffering Card (Neon Cyan Card) -->
+        <div id="channel-switch-card" class="channel-switch-card">
+            <div class="cs-spinner-wrap">
+                <div class="cs-spinner-ring"></div>
             </div>
-            <div class="info-status">
-                <span class="live-badge">LIVE</span>
+            <div class="cs-card-container">
+                <div class="cs-logo-wrap">
+                    <img id="cs-channel-logo" class="cs-channel-logo" src="" alt="" style="display:none;">
+                    <div id="cs-logo-placeholder" class="cs-logo-placeholder">📺</div>
+                </div>
+                <div class="cs-info-wrap">
+                    <div class="cs-breadcrumb-row">
+                        <span class="cs-badge-new">NEW</span>
+                        <span class="cs-arrow">►</span>
+                        <span id="cs-group-name" class="cs-group-name">Truyền Hình</span>
+                    </div>
+                    <div id="cs-channel-name" class="cs-channel-name">—</div>
+                </div>
+                <div class="cs-num-wrap">
+                    <span id="cs-channel-num" class="cs-channel-num">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direct Channel Dialing Overlay HUD -->
+        <div id="channel-dial-hud" class="channel-dial-hud">
+            <div class="dial-label">KÊNH</div>
+            <div id="dial-number" class="dial-number">--</div>
+        </div>
+
+        <!-- Modern Floating OSD Info Bar (bottom) -->
+        <div id="info-bar" class="modern-osd" role="status" aria-live="polite">
+            <div class="osd-top-row">
+                <div class="osd-logo-wrap">
+                    <img id="current-channel-logo" src="" alt="Channel logo" style="display:none;">
+                    <div id="current-logo-placeholder" class="osd-logo-placeholder">📺</div>
+                </div>
+                <div class="osd-meta-wrap">
+                    <div class="osd-channel-line">
+                        <span id="current-channel-name" class="osd-channel-name">—</span>
+                        <span id="current-channel-num" class="osd-channel-num">--</span>
+                        <div class="osd-breadcrumb">
+                            <span class="osd-badge-new">NEW</span>
+                            <span class="osd-arrow">►</span>
+                            <span id="osd-group-name" class="osd-group-name">Live Stream</span>
+                        </div>
+                    </div>
+                    <div id="osd-program-title" class="osd-program-title">Chương trình phát sóng trực tiếp</div>
+                </div>
+                <div class="osd-status-wrap">
+                    <span class="live-badge">LIVE</span>
+                </div>
+            </div>
+            <div class="osd-timeline-row">
+                <span id="osd-time-start" class="osd-time">08:00 PM</span>
+                <div class="osd-progress-track">
+                    <div id="osd-progress-fill" class="osd-progress-fill" style="width: 50%;">
+                        <div class="osd-progress-dot"></div>
+                    </div>
+                </div>
+                <span id="osd-time-end" class="osd-time">09:00 PM</span>
             </div>
         </div>
     </main>
@@ -103,11 +158,41 @@
 
         <!-- Channel Panel -->
         <section id="channel-panel">
-            <div class="panel-header" id="channel-panel-header">Channels</div>
+            <div class="panel-header" id="channel-panel-header">
+                <span id="channel-panel-title">Channels</span>
+                <span id="channel-count-badge" class="channel-count-badge">0</span>
+            </div>
             <ul id="channel-list" role="listbox" aria-label="Channel list"></ul>
             <div id="no-channels">
                 <div class="nc-icon">📭</div>
                 <div class="nc-text">No channels found</div>
+            </div>
+        </section>
+
+        <!-- EPG Schedule Detail Panel (Right Column) -->
+        <section id="epg-panel">
+            <div class="panel-header">Lịch Phát Sóng (EPG)</div>
+            <div class="epg-cards-wrap">
+                <!-- Now Playing Program Card -->
+                <div class="epg-program-card epg-card-now">
+                    <div class="epg-card-head">
+                        <span class="epg-card-tag now">ĐANG PHÁT</span>
+                        <span id="epg-now-time" class="epg-card-time">08:00 PM - 09:00 PM</span>
+                    </div>
+                    <div id="epg-now-title" class="epg-card-title">Chương trình phát sóng trực tiếp</div>
+                    <div class="epg-card-progress-track">
+                        <div id="epg-now-progress" class="epg-card-progress-fill" style="width: 50%;"></div>
+                    </div>
+                </div>
+
+                <!-- Next Program Card -->
+                <div class="epg-program-card epg-card-next">
+                    <div class="epg-card-head">
+                        <span class="epg-card-tag next">TIẾP THEO</span>
+                        <span id="epg-next-time" class="epg-card-time">09:00 PM - 10:00 PM</span>
+                    </div>
+                    <div id="epg-next-title" class="epg-card-title">Chương trình tiếp theo</div>
+                </div>
             </div>
         </section>
     </div>
@@ -155,12 +240,12 @@
     })();
 </script>
 
-<script src="js/storage.js?v=20261015_01"></script>
-<script src="js/m3u-parser.js?v=20261015_01"></script>
-<script src="js/player.js?v=20261015_01"></script>
-<script src="js/remote.js?v=20261015_01"></script>
-<script src="js/ui.js?v=20261015_01"></script>
-<script src="js/app.js?v=20261015_01"></script>
+<script src="js/storage.js?v=20261017_01"></script>
+<script src="js/m3u-parser.js?v=20261017_01"></script>
+<script src="js/player.js?v=20261017_01"></script>
+<script src="js/remote.js?v=20261017_01"></script>
+<script src="js/ui.js?v=20261017_01"></script>
+<script src="js/app.js?v=20261017_01"></script>
 
 <script>
     window.addEventListener('appcontrol', function() {
